@@ -56,7 +56,6 @@ public class GreedAI : MonoBehaviour
     [Header("Phase 2")]
     [SerializeField] private float roomWidth = 30f;
     [SerializeField] private float roomLength = 40f;
-    [SerializeField] private float telegraphHeight = 0.05f;
     [SerializeField] private float version1TelegraphDuration = 1.3f;
     [SerializeField] private float version1BurstGap = 0.15f;
     [SerializeField] private float version2LightGap = 0.35f;
@@ -101,7 +100,6 @@ public class GreedAI : MonoBehaviour
     [SerializeField] private AudioClip bossMusicClip;
     [SerializeField] private AudioClip[] randomSfxClips;
     [SerializeField] private Vector2 randomSfxIntervalRange = new Vector2(3f, 8f);
-    [SerializeField] private float oneShotSpatialBlend = 1f;
     [SerializeField] private float oneShotMinDistance = 2f;
     [SerializeField] private float oneShotMaxDistance = 25f;
 

@@ -13898,6 +13898,7 @@ MonoBehaviour:
   fadeDuration: 1
   betweenTitles: 0.25
   gapBetweenSentences: 0.05
+  narrationMixerGroup: {fileID: 0}
   logoSoundVolume: 0.11
   logoFadeDelayAfterSoundStarts: 0
   logoHold: 0
