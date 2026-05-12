@@ -1,116 +1,91 @@
 using UnityEngine;
 using UnityEngine.UI;
-using TMPro;
+using TMPro; // We need this to talk to TextMeshPro Dropdowns!
 
 public class OptionsResetButton : MonoBehaviour
 {
-    [Header("Tab Screens")]
+    [Header("Options Screens (Tabs)")]
     public GameObject gameplayScreen;
     public GameObject videoScreen;
     public GameObject audioScreen;
-    public GameObject keybindsScreen;
+    public GameObject keybindScreen;
 
-    [Header("Defaults")]
-    public float defaultMasterVolume = 0.25f;
-    public float defaultShakeAmount = .75f;
+    [Header("Audio UI Elements")]
+    public Slider masterSlider;
+    public Slider musicSlider;
+    public Slider sfxSlider;
+    public Slider narrationSlider;
 
-    public bool defaultFullscreen = true;
-    public int defaultQualityIndex = 2;
-    public int defaultResolutionIndex = 0;
+    [Header("Gameplay UI Elements")]
+    public Slider shakeSlider;
+
+    [Header("Video UI Elements")]
+    public TMP_Dropdown resolutionDropdown;
+    public TMP_Dropdown graphicsDropdown;
+    public TMP_Dropdown screenTypeDropdown;
 
     public void ResetCurrentTab()
     {
-        if (gameplayScreen != null && gameplayScreen.activeInHierarchy)
+        if (audioScreen != null && audioScreen.activeInHierarchy)
         {
-            ResetGameplay();
+            ResetAudioSettings();
         }
         else if (videoScreen != null && videoScreen.activeInHierarchy)
         {
-            ResetVideo();
+            ResetVideoSettings();
         }
-        else if (audioScreen != null && audioScreen.activeInHierarchy)
+        else if (gameplayScreen != null && gameplayScreen.activeInHierarchy)
         {
-            ResetAudio();
+            ResetGameplaySettings();
         }
-        else if (keybindsScreen != null && keybindsScreen.activeInHierarchy)
+        else if (keybindScreen != null && keybindScreen.activeInHierarchy)
         {
-            ResetKeybinds();
+            ResetKeybindSettings();
         }
     }
 
-    void ResetGameplay()
+    private void ResetAudioSettings()
     {
-        Slider[] sliders = gameplayScreen.GetComponentsInChildren<Slider>(true);
-        Toggle[] toggles = gameplayScreen.GetComponentsInChildren<Toggle>(true);
-        TMP_Dropdown[] tmpDropdowns = gameplayScreen.GetComponentsInChildren<TMP_Dropdown>(true);
-        Dropdown[] dropdowns = gameplayScreen.GetComponentsInChildren<Dropdown>(true);
-
-        foreach (Slider slider in sliders)
-        {
-            if (slider.name.ToLower().Contains("shake"))
-            {
-                slider.value = defaultShakeAmount;
-            }
-        }
-
-        Debug.Log("Gameplay settings reset.");
+        if (masterSlider != null) masterSlider.value = 0.75f;
+        if (musicSlider != null) musicSlider.value = 0.75f;
+        if (sfxSlider != null) sfxSlider.value = 0.75f;
+        if (narrationSlider != null) narrationSlider.value = 0.75f;
     }
 
-    void ResetVideo()
+    private void ResetVideoSettings()
     {
-        Slider[] sliders = videoScreen.GetComponentsInChildren<Slider>(true);
-        Toggle[] toggles = videoScreen.GetComponentsInChildren<Toggle>(true);
-        TMP_Dropdown[] tmpDropdowns = videoScreen.GetComponentsInChildren<TMP_Dropdown>(true);
-        Dropdown[] dropdowns = videoScreen.GetComponentsInChildren<Dropdown>(true);
 
-        foreach (Toggle toggle in toggles)
+        if (screenTypeDropdown != null)
         {
-            if (toggle.name.ToLower().Contains("fullscreen"))
-            {
-                toggle.isOn = defaultFullscreen;
-            }
+            screenTypeDropdown.value = 0; // Default to 'Fullscreen'
+            screenTypeDropdown.RefreshShownValue(); // Forces the UI text to update
         }
 
-        foreach (TMP_Dropdown dropdown in tmpDropdowns)
+        if (graphicsDropdown != null)
         {
-            string n = dropdown.name.ToLower();
-
-            if (n.Contains("quality"))
-                dropdown.value = defaultQualityIndex;
-            else if (n.Contains("resolution"))
-                dropdown.value = defaultResolutionIndex;
+            graphicsDropdown.value = 1; // Default to Medium
+            graphicsDropdown.RefreshShownValue();
         }
 
-        foreach (Dropdown dropdown in dropdowns)
+        if (resolutionDropdown != null)
         {
-            string n = dropdown.name.ToLower();
-
-            if (n.Contains("quality"))
-                dropdown.value = defaultQualityIndex;
-            else if (n.Contains("resolution"))
-                dropdown.value = defaultResolutionIndex;
+            resolutionDropdown.value = 9;
+            resolutionDropdown.RefreshShownValue();
         }
 
-        Debug.Log("Video settings reset.");
+        Debug.Log("Video settings reset to default.");
     }
 
-    void ResetAudio()
+    private void ResetGameplaySettings()
     {
-        Slider[] sliders = audioScreen.GetComponentsInChildren<Slider>(true);
+        if (shakeSlider != null) shakeSlider.value = 0.75f;
 
-        foreach (Slider slider in sliders)
-        {
-            if (slider.name.ToLower().Contains("volume"))
-            {
-                slider.value = defaultMasterVolume;
-            }
-        }
-
-        Debug.Log("Audio settings reset.");
+        Debug.Log("Gameplay settings reset to default.");
     }
 
-    void ResetKeybinds()
+    private void ResetKeybindSettings()
     {
-        Debug.Log("Keybind reset not implemented yet.");
+        // Ready for when you build the keybinds tab!
+        Debug.Log("Keybinds reset to default.");
     }
 }
