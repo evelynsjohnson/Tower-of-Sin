@@ -67,6 +67,7 @@ public class PrisonZombieAI : MonoBehaviour
     private AudioSource walkAudioSource;
     private Rigidbody rb;
     private Vector3 initialSpawnPosition;
+    private Quaternion initialSpawnRotation; // Added to track original facing direction
 
     private float nextAttackTime = 0f;
     private float idleAudioTimer = 0f;
@@ -85,7 +86,9 @@ public class PrisonZombieAI : MonoBehaviour
     {
         maxHealth = 100f + ((FloorTextController.floorNumber - 1) * 5f);
         currentHealth = maxHealth;
+
         initialSpawnPosition = transform.position;
+        initialSpawnRotation = transform.rotation; // Save original rotation
 
         rb = GetComponent<Rigidbody>();
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationY | RigidbodyConstraints.FreezeRotationZ;
@@ -289,14 +292,28 @@ public class PrisonZombieAI : MonoBehaviour
 
     private void HandleReturning()
     {
-        FollowPathTo(initialSpawnPosition);
-
         Vector3 flatSpawnPos = new Vector3(initialSpawnPosition.x, transform.position.y, initialSpawnPosition.z);
-        if (Vector3.Distance(transform.position, flatSpawnPos) <= 0.5f)
+
+        if (Vector3.Distance(transform.position, flatSpawnPos) > 0.5f)
         {
+            // Still moving towards spawn
+            FollowPathTo(initialSpawnPosition);
+        }
+        else
+        {
+            // Reached spawn, stop moving and pivot
             ClearPath();
-            currentState = ZombieState.Idle;
-            hasSeenPlayer = false;
+            rb.linearVelocity = new Vector3(0, rb.linearVelocity.y, 0);
+
+            transform.rotation = Quaternion.Slerp(transform.rotation, initialSpawnRotation, Time.fixedDeltaTime * 5f);
+
+            // Once the rotation is close enough, snap exactly and switch to Idle
+            if (Quaternion.Angle(transform.rotation, initialSpawnRotation) < 2f)
+            {
+                transform.rotation = initialSpawnRotation;
+                currentState = ZombieState.Idle;
+                hasSeenPlayer = false;
+            }
         }
     }
 
@@ -537,7 +554,14 @@ public class PrisonZombieAI : MonoBehaviour
 
     private void UpdateAnimations()
     {
-        bool isWalking = (currentState == ZombieState.Pursuing || currentState == ZombieState.Returning);
+        bool isWalking = (currentState == ZombieState.Pursuing);
+
+        // Only consider it "walking" while returning if it hasn't reached the spawn destination yet
+        if (currentState == ZombieState.Returning)
+        {
+            Vector3 flatSpawnPos = new Vector3(initialSpawnPosition.x, transform.position.y, initialSpawnPosition.z);
+            isWalking = Vector3.Distance(transform.position, flatSpawnPos) > 0.5f;
+        }
 
         animator.SetBool("isWalking", isWalking);
 
