@@ -9,7 +9,7 @@ using UnityEngine.Audio;
 [RequireComponent(typeof(Rigidbody))]
 public class PrisonZombieAI : MonoBehaviour
 {
-    public enum ZombieState { Idle, Returning, Pursuing, Fleeing, Attacking, Blocking, Enraged, Dead }
+    public enum ZombieState { Idle, Returning, Pursuing, Attacking, Dead }
     public ZombieState currentState = ZombieState.Idle;
 
     [Header("Stats")]
@@ -29,11 +29,9 @@ public class PrisonZombieAI : MonoBehaviour
     public float attackRadius = 2f;
     public float maxLeashDistance = 20f;
     public float walkSpeed = 3.5f;
-    public float fleeSafeDistance = 5f;
     public float attackCooldown = 2f;
     public float attackDamageDelay = 0.5f;
     public float attackRecoveryTime = 1.0f;
-    public float blockDuration = 1f;
     public float healDelay = 5f;
 
     [Header("Vision")]
@@ -55,7 +53,6 @@ public class PrisonZombieAI : MonoBehaviour
     public AudioClip missSound;
     public AudioClip idleSound;
     public AudioClip walkSound;
-    public AudioClip roarSound;
     public AudioMixerGroup sfxMixerGroup;
 
     [Header("References")]
@@ -76,32 +73,19 @@ public class PrisonZombieAI : MonoBehaviour
     private float lastDamageTime = 0f;
     private bool hasSeenPlayer = false;
 
-    private BayesianBrain bayesianBrain;
-    private Vector3 currentMoveTarget;
-
     private List<Vector3> currentPath = new List<Vector3>();
     private int currentPathIndex = 0;
     private float nextPathRecalcTime = 0f;
 
     // Action state safety
     private Coroutine attackRoutine;
-    private Coroutine blockRoutine;
-    private Coroutine enrageRoutine;
     private bool isDying = false;
-
-    // Base values so enrage does not permanently stack weirdly
-    private float baseDamageToPlayer;
-    private float baseAttackCooldown;
 
     void Start()
     {
         maxHealth = 100f + ((FloorTextController.floorNumber - 1) * 5f);
         currentHealth = maxHealth;
         initialSpawnPosition = transform.position;
-
-        baseDamageToPlayer = damageToPlayer;
-        baseAttackCooldown = attackCooldown;
-
 
         rb = GetComponent<Rigidbody>();
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationY | RigidbodyConstraints.FreezeRotationZ;
@@ -138,8 +122,6 @@ public class PrisonZombieAI : MonoBehaviour
 
         idleAudioTimer = Random.Range(2f, 5f);
         UpdateHealthUI();
-
-        bayesianBrain = new BayesianBrain();
     }
 
     void FixedUpdate()
@@ -149,10 +131,6 @@ public class PrisonZombieAI : MonoBehaviour
 
         switch (currentState)
         {
-            case ZombieState.Fleeing:
-                HandleFleeing();
-                break;
-
             case ZombieState.Returning:
                 HandleReturning();
                 break;
@@ -163,8 +141,6 @@ public class PrisonZombieAI : MonoBehaviour
 
             case ZombieState.Idle:
             case ZombieState.Attacking:
-            case ZombieState.Blocking:
-            case ZombieState.Enraged:
                 rb.linearVelocity = new Vector3(0, rb.linearVelocity.y, 0);
                 break;
         }
@@ -311,25 +287,6 @@ public class PrisonZombieAI : MonoBehaviour
         }
     }
 
-    private void HandleFleeing()
-    {
-        Vector3 flatPlayerPos = new Vector3(player.position.x, transform.position.y, player.position.z);
-
-        if (Vector3.Distance(transform.position, flatPlayerPos) < fleeSafeDistance)
-        {
-            Vector3 dirAwayFromPlayer = (transform.position - flatPlayerPos).normalized;
-            currentMoveTarget = transform.position + (dirAwayFromPlayer * 5f);
-            currentMoveTarget.y = transform.position.y;
-
-            FollowPathTo(currentMoveTarget);
-        }
-        else
-        {
-            ClearPath();
-            currentState = ZombieState.Idle;
-        }
-    }
-
     private void HandleReturning()
     {
         FollowPathTo(initialSpawnPosition);
@@ -375,7 +332,8 @@ public class PrisonZombieAI : MonoBehaviour
             new Vector3(initialSpawnPosition.x, transform.position.y, initialSpawnPosition.z)
         );
 
-        if (distanceToSpawn > maxLeashDistance)
+        // Transition to returning if player exceeds max leash distance OR escapes the aggro radius after being seen
+        if (distanceToSpawn > maxLeashDistance || (hasSeenPlayer && distanceToPlayer > aggroRadius))
         {
             CancelCurrentAction();
             ClearPath();
@@ -388,7 +346,7 @@ public class PrisonZombieAI : MonoBehaviour
             hasSeenPlayer = true;
         }
 
-        if (hasSeenPlayer && distanceToPlayer <= aggroRadius)
+        if (hasSeenPlayer)
         {
             if (distanceToPlayer <= attackRadius &&
                 Time.time >= nextAttackTime &&
@@ -441,10 +399,6 @@ public class PrisonZombieAI : MonoBehaviour
         lastDamageTime = Time.time;
         hasSeenPlayer = true;
 
-        // Light attack can be blocked
-        if (currentState == ZombieState.Blocking && attackType == 1)
-            return;
-
         currentHealth -= amount;
         if (currentHealth < 0f) currentHealth = 0f;
         UpdateHealthUI();
@@ -453,47 +407,6 @@ public class PrisonZombieAI : MonoBehaviour
         {
             damageToPlayer = 0f;
             Die();
-            return;
-        }
-
-        EvaluateBayesianState();
-    }
-
-    private void EvaluateBayesianState()
-    {
-        if (currentState == ZombieState.Dead || isDying)
-            return;
-
-        if (currentState == ZombieState.Attacking ||
-            currentState == ZombieState.Blocking ||
-            currentState == ZombieState.Enraged)
-            return;
-
-        float healthPercentage = currentHealth / maxHealth;
-        ZombieState nextState = bayesianBrain.DecideNextState(healthPercentage);
-
-        if (nextState == ZombieState.Blocking)
-        {
-            CancelCurrentAction();
-            ClearPath();
-            blockRoutine = StartCoroutine(BlockRoutine());
-        }
-        else if (nextState == ZombieState.Enraged)
-        {
-            CancelCurrentAction();
-            ClearPath();
-            enrageRoutine = StartCoroutine(EnrageRoutine());
-        }
-        else if (nextState == ZombieState.Fleeing)
-        {
-            CancelCurrentAction();
-            ClearPath();
-            currentState = ZombieState.Fleeing;
-        }
-        else
-        {
-            if (!IsBusyState())
-                currentState = ZombieState.Pursuing;
         }
     }
 
@@ -522,6 +435,7 @@ public class PrisonZombieAI : MonoBehaviour
 
         if (player != null)
         {
+            // Calculate distance solely on the horizontal plane
             Vector3 flatPlayerPos = new Vector3(player.position.x, transform.position.y, player.position.z);
 
             if (Vector3.Distance(transform.position, flatPlayerPos) <= attackRadius + 0.5f)
@@ -545,63 +459,6 @@ public class PrisonZombieAI : MonoBehaviour
             currentState = ZombieState.Pursuing;
 
         attackRoutine = null;
-    }
-
-    private IEnumerator BlockRoutine()
-    {
-        if (currentState == ZombieState.Dead || isDying)
-        {
-            blockRoutine = null;
-            yield break;
-        }
-
-        currentState = ZombieState.Blocking;
-
-        ResetCombatTriggers();
-        animator.SetBool("isWalking", false);
-        animator.SetTrigger("block");
-
-        yield return new WaitForSeconds(blockDuration);
-
-        if (!isDying && currentState == ZombieState.Blocking)
-        {
-            currentState = ZombieState.Pursuing;
-        }
-
-        blockRoutine = null;
-    }
-
-    private IEnumerator EnrageRoutine()
-    {
-        if (currentState == ZombieState.Dead || isDying)
-        {
-            enrageRoutine = null;
-            yield break;
-        }
-
-        currentState = ZombieState.Enraged;
-
-        ResetCombatTriggers();
-        animator.SetBool("isWalking", false);
-        animator.SetTrigger("roar");
-
-        if (roarSound != null)
-            sfxAudioSource.PlayOneShot(roarSound);
-
-        yield return new WaitForSeconds(1.5f);
-
-        if (isDying || currentState != ZombieState.Enraged || currentState == ZombieState.Dead)
-        {
-            enrageRoutine = null;
-            yield break;
-        }
-
-        damageToPlayer = baseDamageToPlayer * 1.5f;
-        attackCooldown = baseAttackCooldown / 1.5f;
-        animator.speed = 1.5f;
-
-        currentState = ZombieState.Pursuing;
-        enrageRoutine = null;
     }
 
     private void Die()
@@ -680,9 +537,7 @@ public class PrisonZombieAI : MonoBehaviour
 
     private void UpdateAnimations()
     {
-        bool isWalking = (currentState == ZombieState.Pursuing ||
-                          currentState == ZombieState.Fleeing ||
-                          currentState == ZombieState.Returning);
+        bool isWalking = (currentState == ZombieState.Pursuing || currentState == ZombieState.Returning);
 
         animator.SetBool("isWalking", isWalking);
 
@@ -728,8 +583,6 @@ public class PrisonZombieAI : MonoBehaviour
     private void ResetCombatTriggers()
     {
         animator.ResetTrigger("attack");
-        animator.ResetTrigger("block");
-        animator.ResetTrigger("roar");
         animator.ResetTrigger("die");
     }
 
@@ -740,25 +593,11 @@ public class PrisonZombieAI : MonoBehaviour
             StopCoroutine(attackRoutine);
             attackRoutine = null;
         }
-
-        if (blockRoutine != null)
-        {
-            StopCoroutine(blockRoutine);
-            blockRoutine = null;
-        }
-
-        if (enrageRoutine != null)
-        {
-            StopCoroutine(enrageRoutine);
-            enrageRoutine = null;
-        }
     }
 
     private bool IsBusyState()
     {
         return currentState == ZombieState.Attacking ||
-               currentState == ZombieState.Blocking ||
-               currentState == ZombieState.Enraged ||
                currentState == ZombieState.Dead ||
                isDying;
     }
@@ -1010,48 +849,6 @@ public class PrisonZombieAI : MonoBehaviour
                 Gizmos.DrawLine(currentPath[i] + Vector3.up * 0.2f, currentPath[i + 1] + Vector3.up * 0.2f);
             }
         }
-    }
-}
-
-public class BayesianBrain
-{
-    public PrisonZombieAI.ZombieState DecideNextState(float healthPercentage)
-    {
-        float blockProb = CalculateBlockProbability(healthPercentage);
-        float enrageProb = CalculateEnrageProbability(healthPercentage);
-        float fleeProb = CalculateFleeProbability(healthPercentage);
-        float pursueProb = Mathf.Max(0f, 100f - (blockProb + enrageProb + fleeProb));
-
-        float roll = Random.Range(0f, 100f);
-
-        if (roll <= blockProb) return PrisonZombieAI.ZombieState.Blocking;
-        roll -= blockProb;
-
-        if (roll <= enrageProb) return PrisonZombieAI.ZombieState.Enraged;
-        roll -= enrageProb;
-
-        if (roll <= fleeProb) return PrisonZombieAI.ZombieState.Fleeing;
-
-        return PrisonZombieAI.ZombieState.Pursuing;
-    }
-
-    private float CalculateBlockProbability(float hpPercentage)
-    {
-        if (hpPercentage > 0.5f) return Mathf.Lerp(10f, 15f, 1f - hpPercentage);
-        return Mathf.Lerp(15f, 5f, hpPercentage * 2f);
-    }
-
-    private float CalculateEnrageProbability(float hpPercentage)
-    {
-        if (hpPercentage > 0.5f) return 10f;
-        return Mathf.Lerp(60f, 20f, hpPercentage * 2f);
-    }
-
-    private float CalculateFleeProbability(float hpPercentage)
-    {
-        if (hpPercentage > 0.5f) return 0f;
-        if (hpPercentage > 0.25f) return Mathf.Lerp(15f, 0f, (hpPercentage - 0.25f) * 4f);
-        return Mathf.Lerp(10f, 15f, hpPercentage * 4f);
     }
 }
 
