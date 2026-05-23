@@ -386,8 +386,8 @@ public class FirstPersonMovement : MonoBehaviour
                     //GluttonyAI gluttony = hitCol.GetComponentInParent<GluttonyAI>();
                     //if (gluttony != null) gluttony.TakeDamage(finalDamage, slashChoice);
 
-                    //WrathAI wrath = hitCol.GetComponentInParent<WrathAI>();
-                    //if (wrath != null) wrath.TakeDamage(finalDamage);
+                    WrathAI wrath = hitCol.GetComponentInParent<WrathAI>();
+                    if (wrath != null) wrath.TakeDamage(finalDamage);
 
                     //PrideAI pride = hitCol.GetComponentInParent<PrideAI>();
                     //if (pride != null) pride.TakeDamage(finalDamage);

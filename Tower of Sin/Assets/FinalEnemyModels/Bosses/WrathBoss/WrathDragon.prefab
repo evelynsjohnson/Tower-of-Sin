@@ -2912,9 +2912,10 @@ GameObject:
   - component: {fileID: 6648059445282947163}
   - component: {fileID: 3060327764607269926}
   - component: {fileID: 8075818186606333979}
+  - component: {fileID: -7071455493933326732}
   m_Layer: 0
   m_Name: WrathDragon
-  m_TagString: Enemy
+  m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -2967,7 +2968,7 @@ NavMeshAgent:
   m_GameObject: {fileID: 5393693356773589825}
   m_Enabled: 1
   m_AgentTypeID: 0
-  m_Radius: 0.5
+  m_Radius: 11.48
   m_Speed: 3.5
   m_Acceleration: 8
   avoidancePriority: 50
@@ -2976,10 +2977,76 @@ NavMeshAgent:
   m_AutoTraverseOffMeshLink: 1
   m_AutoBraking: 1
   m_AutoRepath: 1
-  m_Height: 2
+  m_Height: 25.82
   m_BaseOffset: 0
   m_WalkableMask: 4294967295
   m_ObstacleAvoidanceType: 4
+--- !u!114 &-7071455493933326732
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5393693356773589825}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ea4e570cc44d23746a904c1b814e09ea, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::WrathAI
+  humanoidAnimator: {fileID: 3060327764607269926}
+  agent: {fileID: 8075818186606333979}
+  player: {fileID: 0}
+  humanoidModelRoot: {fileID: 9084623020379619981}
+  wrathDragonPrefab: {fileID: 5393693356773589825}
+  dragonHeadBone: {fileID: 7066478610682837839}
+  wakeRange: 15
+  attackRange: 5
+  faceSpeed: 10
+  baseMaxHP: 1000
+  baseAttackDamage: 25
+  attackCooldownPhase1: 4
+  attackCooldownPhase2: 5
+  telegraphDuration: 1.5
+  bossLightColor: {r: 1, g: 0.2, b: 0.2, a: 1}
+  lightIntensityMultiplier: 1.25
+  bossHealthBarFill: {fileID: 0}
+  bossHealthText: {fileID: 0}
+  bossHealthUIRoot: {fileID: 0}
+  conalCrystalAtkPrefab: {fileID: 5266155148867660151, guid: 9620b587f223d804ea75f03ec6e1357b, type: 3}
+  larCirCrystalAtkPrefab: {fileID: 489468854729919972, guid: 5f6eeef46254deb4992d045f77eddc95, type: 3}
+  smaCirCrystalAtkPrefab: {fileID: 6034590171196406381, guid: 4bc1e456786a0764686254afb1fe3826, type: 3}
+  redBurningGroundPrefab: {fileID: 7067539492306838697, guid: 402cbb83d23a73f42b769b1c5747838a, type: 3}
+  redBurningVertGroundPrefab: {fileID: 2057420804136639601, guid: 05a12a8ffa0fa194f895ae61e214ded2, type: 3}
+  meteorPrefab: {fileID: 3683828790393776706, guid: ee0a391c635f21142bee1ed98b1d895e, type: 3}
+  ballOrbPrefab: {fileID: 8153461764058473096, guid: dec80803296f7b445be3d8f3d5364938, type: 3}
+  dragonFirePrefab: {fileID: 7251879486380165639, guid: c2f6a8962aac3814aa56cb9647c93470, type: 3}
+  telegraphLineWidth: 0.15
+  telegraphYOffset: 0.05
+  coneArcSegments: 20
+  telegraphFillColor: {r: 1, g: 0.2, b: 0.05, a: 0.22}
+  telegraphOutlineColor: {r: 0.45, g: 0.05, b: 0.02, a: 0.95}
+  narrationMixer: {fileID: 5747015506416730578, guid: 37acf924d13abde49898458ba1054559, type: 2}
+  sfxMixer: {fileID: 133451126432789121, guid: 37acf924d13abde49898458ba1054559, type: 2}
+  walkingClip: {fileID: 8300000, guid: 9e0f535c8241b9148927c9c7071d2c62, type: 3}
+  phase1MusicClip: {fileID: 8300000, guid: 2bd888b355b2faf40a7e8bd8285d58a7, type: 3}
+  phase2MusicClip: {fileID: 8300000, guid: 8c71ed56c1246174cab1ea06c9d3ff22, type: 3}
+  introClip: {fileID: 8300000, guid: 106c809339267544daf73439e2b06482, type: 3}
+  phase1To2Clip: {fileID: 8300000, guid: 0c8ce3a77b9a59d4cbc151c4b4e206e0, type: 3}
+  humanoidVoiceClips:
+  - {fileID: 8300000, guid: 39200f41cf881ba4f9e48571d29340f9, type: 3}
+  dragonVoiceClips:
+  - {fileID: 8300000, guid: f3e1c11e2e9192248b061fde4d1a9358, type: 3}
+  dragonDeathClip: {fileID: 8300000, guid: 57ed6d5f449bea34e96ac1534b2911d6, type: 3}
+  melee1Audio: {fileID: 8300000, guid: 5894ad16dde334945b00f68cc86b670b, type: 3}
+  melee2Audio: {fileID: 8300000, guid: d39814b513904cc4bb936cafe3abe9ba, type: 3}
+  crashDownAudio: {fileID: 0}
+  range1Audio: {fileID: 0}
+  leapBackAudio: {fileID: 0}
+  riseUpAudio: {fileID: 0}
+  dragonAtk01Audio: {fileID: 0}
+  dragonAtk02Audio: {fileID: 0}
+  dragonTailAudio: {fileID: 0}
+  dragonFireAudio: {fileID: 0}
 --- !u!1 &5428327800736075754
 GameObject:
   m_ObjectHideFlags: 0
@@ -5135,7 +5202,7 @@ GameObject:
   - component: {fileID: 5963731011030567230}
   m_Layer: 0
   m_Name: root
-  m_TagString: Untagged
+  m_TagString: Enemy
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
@@ -5175,10 +5242,10 @@ CapsuleCollider:
   m_ProvidesContacts: 0
   m_Enabled: 1
   serializedVersion: 2
-  m_Radius: 7.1
-  m_Height: 30.8
+  m_Radius: 9.22
+  m_Height: 32.16
   m_Direction: 1
-  m_Center: {x: 0, y: 2.74, z: 11.85}
+  m_Center: {x: 0, y: 2, z: 9.45}
 --- !u!1 &9121561204456203780
 GameObject:
   m_ObjectHideFlags: 0
